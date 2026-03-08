@@ -41,27 +41,35 @@ val_data = val_datagen.flow_from_directory(
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    shuffle= False
+    shuffle=False
 )
 
 # =========================
-# CNN Model
+# CNN Model (Lightweight)
 # =========================
 model = models.Sequential([
     layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3)),
-    
+
+    layers.Conv2D(16, (3,3), activation='relu'),
+    layers.MaxPooling2D(2,2),
+
     layers.Conv2D(32, (3,3), activation='relu'),
     layers.MaxPooling2D(2,2),
 
     layers.Conv2D(64, (3,3), activation='relu'),
     layers.MaxPooling2D(2,2),
 
-    layers.Flatten(),
-    layers.Dense(128, activation='relu'),
-    layers.Dropout(0.5),
+    layers.GlobalAveragePooling2D(),
+
+    layers.Dense(64, activation='relu'),
+    layers.Dropout(0.3),
+
     layers.Dense(train_data.num_classes, activation='softmax')
 ])
 
+# =========================
+# Compile Model
+# =========================
 model.compile(
     optimizer='adam',
     loss='categorical_crossentropy',
@@ -82,12 +90,6 @@ history = model.fit(
 # =========================
 # Create Results Folder
 # =========================
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-from sklearn.metrics import confusion_matrix
-
 if not os.path.exists("results"):
     os.makedirs("results")
 
@@ -106,11 +108,11 @@ plt.close()
 
 print("Accuracy graph saved successfully!")
 
-# ===== Confusion Matrix =====
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-
+# =========================
+# Confusion Matrix
+# =========================
 val_data.reset()
+
 Y_pred = model.predict(val_data)
 y_pred = np.argmax(Y_pred, axis=1)
 
@@ -130,5 +132,12 @@ plt.close()
 
 print("Confusion matrix saved successfully!")
 
-model.save("models/leaf_model.keras")
+# =========================
+# Save Smaller Model
+# =========================
+if not os.path.exists("models"):
+    os.makedirs("models")
+
+model.save("models/leaf_model.keras", include_optimizer=False)
+
 print("Model Saved Successfully!")
